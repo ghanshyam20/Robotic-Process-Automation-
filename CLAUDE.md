@@ -28,5 +28,5 @@ This repo is **public and student-facing**. It contains installation/setup instr
 ## Toolset covered (fixed — confirm with instructor before changing)
 
 Python 3.11+, git, VS Code, Playwright, Tesseract OCR, Ollama. All LLM inference is local via
-Ollama — no external/hosted API SDKs (Anthropic, OpenAI, etc.) are part of this course, so none
-should appear in these setup instructions.
+Ollama's local API — no external/hosted API SDKs are part of this course, so none should appear
+in these setup instructions.

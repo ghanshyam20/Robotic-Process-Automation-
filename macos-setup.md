@@ -14,17 +14,18 @@ brew install git
 brew install --cask visual-studio-code
 ```
 
-## 3. Project environment
+## 3. Clone this repo and set up a virtual environment
 ```bash
-cd path/to/this/repo
+git clone https://github.com/aesk/rpa-course-setup.git
+cd rpa-course-setup
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -r shared/requirements.txt   # or: pip install -e shared (if using pyproject)
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-## 4. Playwright
+## 4. Playwright browser binaries
 ```bash
-pip install playwright
 playwright install
 ```
 
@@ -44,6 +45,6 @@ ollama pull llama3.1:8b   # or whichever model the course standardizes on — co
 
 ## 7. Verify everything
 ```bash
-python setup/verify_setup.py
+python verify_setup.py
 ```
-All checks should print PASS. If something fails, see `setup/troubleshooting.md`.
+All checks should print PASS. If something fails, see [troubleshooting.md](troubleshooting.md).

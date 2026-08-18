@@ -14,19 +14,20 @@ winget install Git.Git
 winget install Microsoft.VisualStudioCode
 ```
 
-## 3. Project environment
+## 3. Clone this repo and set up a virtual environment
 ```powershell
-cd path\to\this\repo
+git clone https://github.com/aesk/rpa-course-setup.git
+cd rpa-course-setup
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -r shared\requirements.txt
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 > If `Activate.ps1` is blocked by execution policy, run:
 > `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
-## 4. Playwright
+## 4. Playwright browser binaries
 ```powershell
-pip install playwright
 playwright install
 ```
 
@@ -49,6 +50,6 @@ ollama pull llama3.1:8b   # confirm model choice/size with instructor
 
 ## 7. Verify everything
 ```powershell
-python setup\verify_setup.py
+python verify_setup.py
 ```
-All checks should print PASS. If something fails, see `setup\troubleshooting.md`.
+All checks should print PASS. If something fails, see [troubleshooting.md](troubleshooting.md).
