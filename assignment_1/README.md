@@ -8,6 +8,13 @@ images with OCR, applies the club's approval rule, and submits valid requests
 through a local reimbursement website using Playwright. It records every result
 in a CSV ledger and writes execution details to a log file.
 
+
+## Bot process flow
+
+The following diagram shows the main processing flow of the bot.
+
+![Bot process flow](docs/bot_process_flow.drawio)
+
 ## Process rule
 
 - Expenses of €50.00 or less are auto-approved.
