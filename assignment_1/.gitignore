@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+bot.log
+
+output/*
+!output/.gitkeep
+
+processed/*
+!processed/.gitkeep
+
+review/*
+!review/.gitkeep
+
+errors/*
+!errors/.gitkeep

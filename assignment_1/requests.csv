@@ -1,0 +1,6 @@
+request_id,member_name,purpose,claimed_amount,receipt_file
+REQ001,Test Member One,Workshop materials,17.40,receipts/receipt_001.png
+REQ002,Test Member Two,Club event catering,75.00,receipts/receipt_002.png
+REQ003,Test Member Three,Printing supplies,22.50,receipts/receipt_003.png
+REQ004,Test Member Four,Travel expense,30.00,receipts/missing_receipt.png
+REQ005,Test Member Five,Office supplies,invalid,receipts/receipt_005.png
