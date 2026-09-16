@@ -12,11 +12,23 @@ actually needs. But per spec.md, your submission must include all of:
 Fill in each TODO. Delete the parts of this skeleton that don't apply to your process
 and add what you need — this is a starting structure, not a rigid template.
 """
+import csv
 import logging
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 LOG_PATH = BASE_DIR / "bot.log"
+
+INPUT_PATH = BASE_DIR / "requests.csv"
+
+REQUIRED_FIELDS = (
+    "request_id",
+    "member_name",
+    "purpose",
+    "claimed_amount",
+    "receipt_file",
+)
+
 
 # Same logger pattern as Session 8: a named logger, console handler for a short live
 # view (INFO+), file handler for the full record (DEBUG+). Reuse this as-is.
@@ -35,14 +47,78 @@ logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
 
-def read_input():
-    """TODO: read your input file(s) — CSV, Excel, or a generated work queue.
 
-    Use RPA.Tables, RPA.Excel.Files, RPA.FileSystem, or plain Python — whichever
-    fits your process. Return an iterable of items to process (dicts are a
-    reasonable default, matching the pattern from Sessions 4/7).
-    """
-    raise NotImplementedError
+def read_input():
+    """Read and validate reimbursement requests from the CSV work queue."""
+
+    if not INPUT_PATH.exists():
+        logger.error("Input file does not exist: %s", INPUT_PATH)
+        return []
+
+    items = []
+    seen_request_ids = set()
+
+    try:
+        with INPUT_PATH.open(newline="", encoding="utf-8-sig") as input_file:
+            reader = csv.DictReader(input_file)
+
+            missing_columns = set(REQUIRED_FIELDS) - set(reader.fieldnames or [])
+            if missing_columns:
+                logger.error(
+                    "Input file is missing required columns: %s",
+                    ", ".join(sorted(missing_columns)),
+                )
+                return []
+
+            for row_number, row in enumerate(reader, start=2):
+                item = {
+                    field: (row.get(field) or "").strip()
+                    for field in REQUIRED_FIELDS
+                }
+
+                missing_values = [
+                    field for field, value in item.items() if not value
+                ]
+                if missing_values:
+                    logger.warning(
+                        "skipping row %d: missing values for %s",
+                        row_number,
+                        ", ".join(missing_values),
+                    )
+                    continue
+
+                request_id = item["request_id"]
+
+                if request_id in seen_request_ids:
+                    logger.warning(
+                        "skipping duplicate request ID %s on row %d",
+                        request_id,
+                        row_number,
+                    )
+                    continue
+
+                try:
+                    claimed_amount = float(item["claimed_amount"])
+                    if claimed_amount <= 0:
+                        raise ValueError
+                except ValueError:
+                    logger.warning(
+                        "skipping request %s: invalid claimed amount %r",
+                        request_id,
+                        item["claimed_amount"],
+                    )
+                    continue
+
+                item["claimed_amount"] = claimed_amount
+                seen_request_ids.add(request_id)
+                items.append(item)
+
+    except (OSError, csv.Error):
+        logger.exception("could not read input file: %s", INPUT_PATH)
+        return []
+
+    logger.info("loaded %d valid reimbursement requests", len(items))
+    return items
 
 
 def web_interaction(item):
