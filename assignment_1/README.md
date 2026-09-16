@@ -13,7 +13,7 @@ in a CSV ledger and writes execution details to a log file.
 
 The following diagram shows the main processing flow of the bot.
 
-![Bot process flow](docs/bot_process_flow.drawio)
+![Bot process flow](docs/bot_process_flow.drawio.png)
 
 ## Process rule
 
