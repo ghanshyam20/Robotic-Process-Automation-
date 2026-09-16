@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Club Expense Reimbursement</title>
+</head>
+<body>
+    <h1>Club Expense Reimbursement</h1>
+
+    <form id="reimbursement-form">
+        <label for="request-id">Request ID</label>
+        <input id="request-id" required>
+
+        <label for="member-name">Member name</label>
+        <input id="member-name" required>
+
+        <label for="purpose">Purpose</label>
+        <input id="purpose" required>
+
+        <label for="vendor">Receipt vendor</label>
+        <input id="vendor" required>
+
+        <label for="receipt-date">Receipt date</label>
+        <input id="receipt-date" required>
+
+        <label for="amount">Amount EUR</label>
+        <input id="amount" type="number" step="0.01" required>
+
+        <label for="status">Decision</label>
+        <select id="status" required>
+            <option value="">Select decision</option>
+            <option value="auto-approved">Auto-approved</option>
+            <option value="needs-president-approval">
+                Needs president approval
+            </option>
+        </select>
+
+        <button id="submit-request" type="submit">Submit request</button>
+    </form>
+
+    <p id="confirmation" hidden></p>
+
+    <script>
+        const form = document.querySelector("#reimbursement-form");
+        const confirmation = document.querySelector("#confirmation");
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const requestId = document.querySelector("#request-id").value;
+            confirmation.textContent = `Submitted request ${requestId}`;
+            confirmation.hidden = false;
+        });
+    </script>
+</body>
+</html>
