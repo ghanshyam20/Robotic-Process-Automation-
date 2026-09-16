@@ -1,0 +1,7 @@
+# Pinned to match shared/pyproject.toml in the (private) rpa-course repo — keep in sync.
+playwright>=1.47,<2
+rpaframework>=28.0,<29
+pytesseract>=0.3.13,<0.4
+ollama>=0.3.3,<0.4
+mcp>=2.0,<3
+pytest>=8.3,<9
