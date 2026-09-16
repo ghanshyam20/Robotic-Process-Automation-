@@ -18,11 +18,15 @@ import logging
 from pathlib import Path
 import pytesseract
 from PIL import Image, UnidentifiedImageError
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
 
 BASE_DIR = Path(__file__).parent
 LOG_PATH = BASE_DIR / "bot.log"
 
 INPUT_PATH = BASE_DIR / "requests.csv"
+SITE_URL = (BASE_DIR / "site" / "reimbursement.html").resolve().as_uri()
 
 REQUIRED_FIELDS = (
     "request_id",
@@ -128,13 +132,64 @@ def read_input():
 
 
 def web_interaction(item):
-    """TODO: interact with a website using Playwright for this item.
+    """submit one reimbursement request through the local web protal ."""
+    receipt=item.get("receipt")
 
-    Needs at least one real interaction beyond just loading a page — filling a
-    form, clicking something, selecting an option, or extracting data via a
-    locator (Session 5's pattern). Return whatever your process needs from it.
-    """
-    raise NotImplementedError
+    required_fields=("request_id","member_name","purpose","status")
+    missing_fields=[
+        field for field in required_fields if not item.get(field)
+    ]
+    if receipt is None:
+        missing_fields.append("receipt")
+
+
+    if missing_fields:
+        logger.error(
+            "cannot submit web form; missing data : %s",
+            ", ".join(missing_fields)
+        )
+        return None
+
+
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+
+            try:
+                page = browser.new_page()
+                page.goto(
+                    SITE_URL,
+                    wait_until="domcontentloaded",
+                    timeout=5000,
+                )
+
+                page.fill("#request-id", item["request_id"])
+                page.fill("#member-name", item["member_name"])
+                page.fill("#purpose", item["purpose"])
+                page.fill("#vendor", receipt["vendor"])
+                page.fill("#receipt-date", receipt["date"])
+                page.fill("#amount", f"{receipt['amount_eur']:.2f}")
+                page.select_option("#status", item["status"])
+
+
+                page.click("#submit-request")
+                confirmation = page.locator("#confirmation")
+                confirmation.wait_for(state="visible", timeout=3000)
+
+                message=confirmation.text_content().strip()
+                logger.info("website confimaton: %s", message)
+                return message
+            finally:
+                browser.close()
+
+
+
+    except PlaywrightTimeoutError:
+        logger.exception("Website timed out: %s", SITE_URL)
+        return None
+    except PlaywrightError:
+        logger.exception("Playwright could not use website: %s", SITE_URL)
+        return None
 
 
 def parse_receipt_text(text):
