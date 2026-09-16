@@ -46,8 +46,11 @@ file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s:
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
+
+
 def read_input():
     """Read and validate reimbursement requests from the CSV work queue."""
+
     if not INPUT_PATH.exists():
         logger.error("Input file does not exist: %s", INPUT_PATH)
         return []
@@ -78,7 +81,7 @@ def read_input():
                 ]
                 if missing_values:
                     logger.warning(
-                        "Skipping row %d: missing values for %s",
+                        "skipping row %d: missing values for %s",
                         row_number,
                         ", ".join(missing_values),
                     )
@@ -88,7 +91,7 @@ def read_input():
 
                 if request_id in seen_request_ids:
                     logger.warning(
-                        "Skipping duplicate request ID %s on row %d",
+                        "skipping duplicate request ID %s on row %d",
                         request_id,
                         row_number,
                     )
@@ -100,7 +103,7 @@ def read_input():
                         raise ValueError
                 except ValueError:
                     logger.warning(
-                        "Skipping request %s: invalid claimed amount %r",
+                        "skipping request %s: invalid claimed amount %r",
                         request_id,
                         item["claimed_amount"],
                     )
@@ -111,10 +114,10 @@ def read_input():
                 items.append(item)
 
     except (OSError, csv.Error):
-        logger.exception("Could not read input file: %s", INPUT_PATH)
+        logger.exception("could not read input file: %s", INPUT_PATH)
         return []
 
-    logger.info("Loaded %d valid reimbursement requests", len(items))
+    logger.info("loaded %d valid reimbursement requests", len(items))
     return items
 
 
