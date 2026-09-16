@@ -36,6 +36,21 @@ REQUIRED_FIELDS = (
     "receipt_file",
 )
 
+
+OUTPUT_PATH = BASE_DIR / "output" / "results.csv"
+RESULT_FIELDS = (
+    "request_id",
+    "member_name",
+    "purpose",
+    "claimed_amount",
+    "receipt_vendor",
+    "receipt_date",
+    "receipt_amount",
+    "status",
+    "confirmation",
+    "note",
+)
+
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 AMOUNT_PATTERN = re.compile(r"\d+[.,]\d{2}")
 
@@ -161,6 +176,7 @@ def web_interaction(item):
                     SITE_URL,
                     wait_until="domcontentloaded",
                     timeout=5000,
+
                 )
 
                 page.fill("#request-id", item["request_id"])
@@ -256,33 +272,183 @@ def extract_from_document(image_path):
     return receipt
 
 
+APPROVAL_THRESHOLD_EUR=50.00
+def approval_status(amount_eur):
+    """Return the decision used by the reimbursement portal."""
+    if amount_eur <= APPROVAL_THRESHOLD_EUR:
+        return "auto-approved"
+    return "needs-president-approval"
+
+
+
+def write_result(item, status, receipt=None, confirmation="", note=""):
+    """Append one processing result to the CSV ledger."""
+    receipt = receipt or {}
+
+    row = {
+        "request_id": item["request_id"],
+        "member_name": item["member_name"],
+        "purpose": item["purpose"],
+        "claimed_amount": item["claimed_amount"],
+        "receipt_vendor": receipt.get("vendor", ""),
+        "receipt_date": receipt.get("date", ""),
+        "receipt_amount": receipt.get("amount_eur", ""),
+        "status": status,
+        "confirmation": confirmation,
+        "note": note,
+    }
+
+    try:
+        OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        new_file = not OUTPUT_PATH.exists()
+
+        with OUTPUT_PATH.open("a", newline="", encoding="utf-8") as output_file:
+            writer = csv.DictWriter(output_file, fieldnames=RESULT_FIELDS)
+
+            if new_file:
+                writer.writeheader()
+
+            writer.writerow(row)
+    except OSError:
+        logger.exception("Could not write result for %s", item["request_id"])
+        return False
+
+    logger.info("Recorded result for request %s", item["request_id"])
+    return True
+
+
+def read_recorded_request_ids():
+    """return request id's already present in the results ledger."""
+    if not OUTPUT_PATH.exists():
+        return set()
+
+    try:
+        with OUTPUT_PATH.open(newline="", encoding="utf-8") as output_file:
+            reader = csv.DictReader(output_file)
+
+            if not reader.fieldnames or "request_id" not in reader.fieldnames:
+                logger.error("results file has no request_id column")
+                return None
+
+            return {
+                row["request_id"]
+                for row in reader
+                if row.get("request_id")
+            }
+    except (OSError, csv.Error):
+        logger.exception("could not read existing results: %s", OUTPUT_PATH)
+        return None
+
+
+
+
 def process_item(item):
-    """TODO: tie the above together for one item.
+    """Process one reimbursement request and return its final status."""
+    request_id = item["request_id"]
+    receipt = extract_from_document(item["receipt_file"])
 
-    Wrap risky per-item steps in try/except — an unexpected failure on one item
-    should be logged (logger.exception(...)) and shouldn't crash the whole batch
-    (Session 8's pattern). Return whatever outcome/status this item ended with,
-    or raise if the item should be flagged for review.
-    """
-    raise NotImplementedError
+    if receipt is None:
+        status = "needs-review"
+        note = "Receipt could not be read"
 
+        logger.warning(
+            "Request %s needs review because its receipt could not be processed",
+            request_id,
+        )
+
+        if not write_result(item, status, note=note):
+            return "output-error"
+
+        return status
+
+    amount_difference = abs(
+        item["claimed_amount"] - receipt["amount_eur"]
+    )
+
+    if amount_difference > 0.01:
+        status = "needs-review"
+        note = (
+            f"Claimed {item['claimed_amount']:.2f} EUR, "
+            f"receipt shows {receipt['amount_eur']:.2f} EUR"
+        )
+
+        logger.warning("Request %s needs review: %s", request_id, note)
+
+        if not write_result(item, status, receipt=receipt, note=note):
+            return "output-error"
+
+        return status
+
+    status = approval_status(receipt["amount_eur"])
+
+    web_item = item.copy()
+    web_item["receipt"] = receipt
+    web_item["status"] = status
+
+    confirmation = web_interaction(web_item)
+
+    if confirmation is None:
+        status = "web-error"
+
+        if not write_result(
+            item,
+            status,
+            receipt=receipt,
+            note="Website submission failed",
+        ):
+            return "output-error"
+
+        return status
+
+    if not write_result(
+        item,
+        status,
+        receipt=receipt,
+        confirmation=confirmation,
+    ):
+        return "output-error"
+
+    logger.info("Completed request %s with status %s", request_id, status)
+    return status
 
 def main():
     items = read_input()
-    processed, errored = 0, 0
+    recorded_ids=read_recorded_request_ids()
+
+
+    if recorded_ids is None:
+        logger.error("stopping because results file could not be read")
+        return
+    processed,needs_review, errored,skipped = 0, 0,0,0
 
     for item in items:
+        request_id=item["request_id"]
+
+        if request_id in recorded_ids:
+            logger.info("skipping already recorded request %s",request_id)
+            skipped += 1
+            continue
+
+
+
         try:
-            process_item(item)
-            processed += 1
+            outcome=process_item(item)
+
+
         except Exception:
-            # Broad on purpose — the "something unexpected happened with this one
-            # item" catch. Narrow, expected failures (e.g. OCR couldn't read a
-            # receipt) should be handled inside process_item itself, not here.
+
             logger.exception("Unexpected error processing %r", item)
             errored += 1
+            continue
 
-    logger.info("Done: %d processed, %d errored", processed, errored)
+        if outcome in ("auto-approved", "needs-president-approval"):
+            processed += 1
+        elif outcome == "needs-review":
+            needs_review += 1
+        else:
+            errored += 1
+
+    logger.info("Done: %d processed, %d errored, %d needs review, %d skipped", processed, errored, needs_review, skipped)
 
 
 if __name__ == "__main__":
