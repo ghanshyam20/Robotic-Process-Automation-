@@ -1,0 +1,9 @@
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: 1
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: 2
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: 'not a number'
+2026-09-09 12:13:55,372 WARNING reference: Skipping non-numeric item 'not a number'
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: 4
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: None
+2026-09-09 12:13:55,372 WARNING reference: Skipping non-numeric item None
+2026-09-09 12:13:55,372 DEBUG reference: Processing item: 5
+2026-09-09 12:13:55,372 INFO reference: Done: 4 results, 0 errors

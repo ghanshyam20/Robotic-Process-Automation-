@@ -1,0 +1,28 @@
+2026-09-09 12:54:40,278 INFO reimbursement_bot: Processing request_001.csv...
+2026-09-09 12:54:40,279 INFO reimbursement_bot: auto-approved (25.50 EUR)
+2026-09-09 12:54:40,279 INFO reimbursement_bot: Processing request_002.csv...
+2026-09-09 12:54:40,279 INFO reimbursement_bot: needs manager approval (120.00 EUR)
+2026-09-09 12:54:40,279 INFO reimbursement_bot: Processing request_003.csv...
+2026-09-09 12:54:40,279 INFO reimbursement_bot: auto-approved (45.00 EUR)
+2026-09-09 12:54:40,280 INFO reimbursement_bot: Processing request_004.csv...
+2026-09-09 12:54:40,280 INFO reimbursement_bot: needs manager approval (200.00 EUR)
+2026-09-09 12:54:40,280 INFO reimbursement_bot: Processing request_005.csv...
+2026-09-09 12:54:40,280 WARNING reimbursement_bot: Invalid (request_005.csv): missing required field 'amount_eur'
+2026-09-09 12:54:40,280 INFO reimbursement_bot: Processing request_006.csv...
+2026-09-09 12:54:40,281 INFO reimbursement_bot: auto-approved (50.00 EUR)
+2026-09-09 12:54:40,281 INFO reimbursement_bot: Processing request_007.csv...
+2026-09-09 12:54:40,281 ERROR reimbursement_bot: Could not read request request_007.csv
+Traceback (most recent call last):
+  File "/home/ghanshyam-bhattarai/rpa-course-setup/session_8/retrofit_reimbursement_bot.py", line 186, in main
+    request = read_request(
+              ^^^^^^^^^^^^^
+  File "/home/ghanshyam-bhattarai/rpa-course-setup/session_8/retrofit_reimbursement_bot.py", line 63, in read_request
+    table = tables.read_table_from_csv(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ghanshyam-bhattarai/rpa-course-setup/.venv/lib/python3.11/site-packages/RPA/Tables.py", line 1912, in read_table_from_csv
+    dialect_name = sniffer.sniff(sample, delimiters)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/csv.py", line 187, in sniff
+    raise Error("Could not determine delimiter")
+_csv.Error: Could not determine delimiter
+2026-09-09 12:54:40,284 INFO reimbursement_bot: Processed: 5, needs manager approval: 2, skipped (invalid): 1, errored: 1

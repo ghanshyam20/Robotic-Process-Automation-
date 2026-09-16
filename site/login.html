@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metropolia Robotics Club — Sign in</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 2rem; color: #222; max-width: 420px; }
+  label { display: block; margin-top: 0.75rem; font-size: 0.9rem; }
+  input { display: block; width: 100%; padding: 0.4rem; margin-top: 0.2rem; box-sizing: border-box; }
+  button { margin-top: 1rem; padding: 0.5rem 1rem; }
+  #login-error { margin-top: 1rem; padding: 0.6rem; border-radius: 4px; display: none; }
+  #login-error.show { display: block; }
+  #login-error[data-error-type="invalid_credentials"] { background: #fdecea; color: #b00020; }
+  #login-error[data-error-type="transient"] { background: #fff4e5; color: #8a5300; }
+</style>
+</head>
+<body>
+<h1>Metropolia Robotics Club — Sign in</h1>
+<p>Officers only. Sign in to view the equipment inventory.</p>
+
+<form id="login-form">
+  <label for="username">Username</label>
+  <input id="username" name="username" type="text" autocomplete="off">
+
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" autocomplete="off">
+
+  <button id="login-submit" type="submit">Sign in</button>
+</form>
+
+<p id="login-error"></p>
+
+<script>
+  const CORRECT_USERNAME = "treasurer";
+  const CORRECT_PASSWORD = "club2026";
+  const TRANSIENT_FAILURES_BEFORE_SUCCESS = 2;
+
+  let correctCredentialAttempts = 0;
+
+  const form = document.getElementById('login-form');
+  const errorBox = document.getElementById('login-error');
+
+  function showError(message, type) {
+    errorBox.textContent = message;
+    errorBox.dataset.errorType = type;
+    errorBox.classList.add('show');
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    if (username !== CORRECT_USERNAME || password !== CORRECT_PASSWORD) {
+      showError('Invalid username or password.', 'invalid_credentials');
+      return;
+    }
+
+    correctCredentialAttempts += 1;
+    if (correctCredentialAttempts <= TRANSIENT_FAILURES_BEFORE_SUCCESS) {
+      showError('Service temporarily unavailable. Please try again.', 'transient');
+      return;
+    }
+
+    window.location.href = 'inventory.html?auth=ok';
+  });
+</script>
+</body>
+</html>
