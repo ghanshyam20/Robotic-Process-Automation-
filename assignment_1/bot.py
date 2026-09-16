@@ -12,9 +12,12 @@ actually needs. But per spec.md, your submission must include all of:
 Fill in each TODO. Delete the parts of this skeleton that don't apply to your process
 and add what you need — this is a starting structure, not a rigid template.
 """
+import re
 import csv
 import logging
 from pathlib import Path
+import pytesseract
+from PIL import Image, UnidentifiedImageError
 
 BASE_DIR = Path(__file__).parent
 LOG_PATH = BASE_DIR / "bot.log"
@@ -28,6 +31,9 @@ REQUIRED_FIELDS = (
     "claimed_amount",
     "receipt_file",
 )
+
+DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+AMOUNT_PATTERN = re.compile(r"\d+[.,]\d{2}")
 
 
 # Same logger pattern as Session 8: a named logger, console handler for a short live
@@ -131,15 +137,68 @@ def web_interaction(item):
     raise NotImplementedError
 
 
-def extract_from_document(image_path):
-    """TODO: OCR a scanned/image-based document with pytesseract, and parse the
-    result defensively.
+def parse_receipt_text(text):
+    """Parse OCR text or return None when required information is unclear."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        return None
 
-    Follow Session 7's pattern: return None (don't guess) if you can't confidently
-    extract what you need, so the caller can route it for review instead of
-    silently logging something wrong.
-    """
-    raise NotImplementedError
+    date_match = DATE_PATTERN.search(text)
+    total_marker = re.search(r"\bTOTAL\b", text, re.IGNORECASE)
+
+    if date_match is None or total_marker is None:
+        return None
+
+    text_after_total = text[total_marker.end():]
+    amounts = AMOUNT_PATTERN.findall(text_after_total)
+
+    if not amounts:
+        return None
+
+    amount = float(amounts[-1].replace(",", "."))
+
+    return {
+        "vendor": lines[0],
+        "date": date_match.group(0),
+        "amount_eur": amount,
+    }
+
+
+def extract_from_document(image_path):
+    """Run OCR on one receipt image and return parsed receipt data."""
+    image_path = Path(image_path)
+
+    if not image_path.is_absolute():
+        image_path = BASE_DIR / image_path
+
+    if not image_path.exists():
+        logger.warning("Receipt file does not exist: %s", image_path)
+        return None
+
+    try:
+        with Image.open(image_path) as image:
+            text = pytesseract.image_to_string(image)
+    except (OSError, UnidentifiedImageError, pytesseract.TesseractError):
+        logger.exception("Could not OCR receipt: %s", image_path)
+        return None
+
+    receipt = parse_receipt_text(text)
+
+    if receipt is None:
+        logger.warning(
+            "Could not confidently extract receipt data from %s",
+            image_path.name,
+        )
+        return None
+
+    logger.info(
+        "Extracted receipt %s: %s, %s, %.2f EUR",
+        image_path.name,
+        receipt["vendor"],
+        receipt["date"],
+        receipt["amount_eur"],
+    )
+    return receipt
 
 
 def process_item(item):
