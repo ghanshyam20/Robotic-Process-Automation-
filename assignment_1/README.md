@@ -1,48 +1,113 @@
-# Assignment 1 starter code
+# Student Club Expense Reimbursement Bot
 
-## Learning objective
+This project is a classical/hybrid RPA bot for processing student club
+reimbursement requests.
 
-A starting structure for Assignment 1 — see `../spec.md` for the full requirements and
-`../rubric.md` for how it's graded. This is not tied to any specific process; adapt it to
-whatever process you scoped in your Session 3 PDD.
+The bot reads requests from a CSV work queue, extracts information from receipt
+images with OCR, applies the club's approval rule, and submits valid requests
+through a local reimbursement website using Playwright. It records every result
+in a CSV ledger and writes execution details to a log file.
 
-## Prerequisites
+## Process rule
 
-- Your own Session 3 mini-PDD (or a new one, for whatever process you're automating) — you should
-  know your process's steps, business rules, and exceptions before writing code against it
-- Everything from Sessions 4–8: `rpaframework` (files/Excel), Playwright, OCR (`pytesseract`),
-  logging and exception handling — this assignment combines all of them
+- Expenses of €50.00 or less are auto-approved.
+- Expenses over €50.00 require approval from the club president.
+- An unreadable or missing receipt is sent for manual review.
+- A claimed amount that differs from the receipt amount is sent for manual
+  review.
+- The bot does not make bank transfers.
 
-## Setup steps
+## Main features
 
-Use the same virtual environment from Session 2 — no new installs needed, everything required
-(`rpaframework`, `playwright`, `pytesseract`, standard library `logging`) is already there.
+- Reads and validates reimbursement requests from `requests.csv`.
+- Skips incomplete, duplicated, or invalid input rows.
+- Uses Tesseract OCR to extract the vendor, date, and total from receipt images.
+- Uses Playwright to fill and submit the reimbursement web form.
+- Handles missing files, unreadable receipts, Playwright failures, and invalid
+  input without stopping the complete batch.
+- Writes progress and errors to `bot.log`.
+- Writes outcomes to `output/results.csv`.
+- Skips requests already present in the results ledger.
 
-Copy `bot.py` as your starting point. Its four TODO functions map directly to the spec's four
-technical requirements (file input, web interaction, OCR extraction, error handling — logging is
-already wired up for you). You don't have to keep this exact structure — split it into more
-files, rename things, reorder the pipeline — but by the end your submission needs to cover the
-same four things.
+## Project structure
 
-You'll need your own input data and target website for your chosen process — these aren't
-provided, since your process is your own. If your process doesn't naturally have a web-automation
-or OCR step, look back at your PDD: is there a system-lookup step that could become the web
-interaction, or a scanned/photographed document you could OCR? Most real processes have more
-candidate steps than the ones you first think of.
+```text
+assignment_1/
+├── bot.py
+├── requests.csv
+├── requirements.txt
+├── receipts/
+│   ├── receipt_001.png
+│   ├── receipt_002.png
+│   └── receipt_003.png
+├── site/
+│   └── reimbursement.html
+├── output/
+├── docs/
+│   ├── PDD.md
+│   └── WRITEUP.md
+└── README.md
 
-## How to verify success
 
-There's no automated checker here (unlike the session exercises) — your process is your own, so
-there's no fixed expected output to compare against. Instead, self-check against `../rubric.md`
-directly:
 
-- Does it run end-to-end on a clean checkout, without manual fix-ups?
-- Does it survive at least one deliberately bad input (a missing field, an unreachable page
-  element, an unreadable document) without an unhandled crash?
-- Is `bot.log` readable and does it actually tell you what happened, including for the failure
-  case above?
-- Run it twice in a row — does the second run do something sensible (not blindly redo/duplicate
-  everything), the way Sessions 4/7/8's bots did?
+```
 
-Write your 1-page write-up (per `../spec.md`) after your bot is working, not before — it's much
-easier to describe real design decisions and real limitations than planned ones.
+## Requirements
+
+- Python 3
+- Tesseract OCR
+- Playwright with Chromium
+- Python packages listed in `requirements.txt`
+
+Install the Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Install the Playwright browser if it is not already installed:
+
+```bash
+playwright install chromium
+```
+
+Tesseract must also be installed on the computer and available from the command line.
+
+## Running the bot
+
+From the `assignment_1` directory, run:
+
+```bash
+python bot.py
+```
+
+The bot creates:
+
+- `bot.log` containing processing and error messages
+- `output/results.csv` containing one result per valid request
+
+## Sample cases
+
+The included work queue demonstrates several paths:
+
+- `REQ001`: valid receipt and auto-approved
+- `REQ002`: valid receipt and requires president approval
+- `REQ003`: deliberately difficult receipt and routed to manual review
+- `REQ004`: missing receipt and routed to manual review
+- `REQ005`: invalid claimed amount and rejected during input validation
+
+Running the bot a second time does not create duplicate result rows. Requests already found in `output/results.csv` are skipped.
+
+To perform a new demonstration from an empty results ledger, remove only the generated file:
+
+```bash
+rm output/results.csv
+python bot.py
+```
+
+## Known limitations
+
+- OCR parsing expects a date in `YYYY-MM-DD` format and an identifiable `TOTAL`.
+- Poor image quality may cause a receipt to require manual review.
+- The included reimbursement portal is a local demonstration website.
+- The bot records approval decisions but does not perform payments or send emails.
