@@ -1,0 +1,13 @@
+2026-09-17 14:03:20,533 DEBUG classify_requests: Processing request_201.csv
+2026-09-17 14:03:54,241 INFO classify_requests: request_201.csv: match (reported=Events, llm=Events)
+2026-09-17 14:03:54,244 DEBUG classify_requests: Processing request_202.csv
+2026-09-17 14:04:05,844 WARNING classify_requests: request_202.csv: reported 'Equipment' but LLM says 'Consumables'
+2026-09-17 14:04:05,845 INFO classify_requests: request_202.csv: mismatch (reported=Equipment, llm=Consumables)
+2026-09-17 14:04:05,846 DEBUG classify_requests: Processing request_203.csv
+2026-09-17 14:04:14,075 INFO classify_requests: request_203.csv: match (reported=Admin, llm=Admin)
+2026-09-17 14:04:14,078 DEBUG classify_requests: Processing request_204.csv
+2026-09-17 14:04:23,475 INFO classify_requests: request_204.csv: match (reported=Equipment, llm=Equipment)
+2026-09-17 14:04:23,476 DEBUG classify_requests: Processing request_205.csv
+2026-09-17 14:04:31,682 WARNING classify_requests: request_205.csv: reported 'Equipment' but LLM says 'Events'
+2026-09-17 14:04:31,683 INFO classify_requests: request_205.csv: mismatch (reported=Equipment, llm=Events)
+2026-09-17 14:04:31,701 INFO classify_requests: Matched: 3, mismatched: 2, needs review: 0, skipped (invalid): 0
