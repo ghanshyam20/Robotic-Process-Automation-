@@ -1,0 +1,2 @@
+2026-10-07 10:23:50,637 WARNING reimbursement_bot: request_002.csv: missing required field 'amount_eur'
+2026-10-07 10:23:50,638 WARNING reimbursement_bot: request_003.csv: amount_eur 'not-a-number' is not a number
